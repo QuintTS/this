@@ -1,0 +1,359 @@
+## Structure Overview
+- `_config.yml`: Jekyll configuration.
+- `_layouts/default.html`: Base layout for pages and posts.
+- `index.md`: Homepage with Hero, Features, and Typeform embed for email capture.
+- `assets/css/style.css`: Basic styling.
+- `_posts/`: Jekyll-formatted blog posts.
+- `keywords.txt`: List of keywords for automated blog generation.
+- `social_prompts.txt`: AI prompts for social copy.
+- `.github/workflows/auto_generate.yml`: GitHub Action for generating blog posts via OpenAI.
+- `.github/workflows/auto_social.yml`: GitHub Action for generating social snippets via OpenAI.
+
+## Prerequisites
+
+1. **GitHub Account**: Create a GitHub account if you don’t have one.
+2. **OpenAI API Key**: Sign up at OpenAI and generate an API key.
+3. **Typeform Account**: Create a Typeform form to collect emails.
+4. **Mailchimp Account**: Use free tier for email drip.
+5. **Bitly Account**: For link shortening.
+6. **Zapier Account**: For automations.
+7. **Carrd Account**: Optional for landing page (not used here, since homepage is custom).
+8. **Other Tools**: HubSpot CRM, Sendinblue, Buffer, Canva, GA4, Hotjar, Trello, Ubersuggest, OneSignal, Monday.com.
+
+## Setup & Deployment
+
+1. **Fork & Clone**
+   ```bash
+   # Replace <your-username> with your GitHub username
+   git clone https://github.com/<your-username>/saas-bundle-automation.git
+   cd saas-bundle-automation
+   ```
+   - If you don’t have a repo yet, click “Use this template” on the GitHub repository page to create your own fork under your account, then clone.
+
+2. **Configure Jekyll**
+   - Open `_config.yml` and update the following fields:
+     ```yaml
+     # Set your repository and site URL
+     repository: <your-username>/saas-bundle-automation
+     url: "https://<your-username>.github.io"
+     ```
+   - Save and commit:
+     ```bash
+     git add _config.yml
+     git commit -m "Update _config.yml with my GitHub Pages URL"
+     git push origin main
+     ```
+
+3. **Add GitHub Secrets for Actions**
+   - In your GitHub repository, go to **Settings → Secrets and variables → Actions**.
+   - Add a new repository secret named `OPENAI_API_KEY` with your OpenAI API key as the value.
+   - Add another secret named `BRANCH` with the value `main` (or the branch you’re using).
+   - This allows the GitHub Actions workflows to authenticate with the OpenAI API and know which branch to push changes to.
+
+4. **Populate `keywords.txt`**
+   - Open `keywords.txt` and add your initial 10–15 long-tail keywords, one per line.
+   - Commit and push:
+     ```bash
+     git add keywords.txt
+     git commit -m "Add initial keywords for blog generation"
+     git push origin main
+     ```
+
+5. **Populate `social_prompts.txt`**
+   - Open `social_prompts.txt` and add at least 30 AI prompts for social media content, one per line.
+   - Commit and push:
+     ```bash
+     git add social_prompts.txt
+     git commit -m "Add initial social prompts for AI generation"
+     git push origin main
+     ```
+
+6. **Create Typeform Form**
+   - Build a Typeform with fields: `Name`, `Email`, and a hidden `referrer_code` field.
+   - Copy the embed snippet (provided in Typeform under **Share → Embed**).
+   - In `index.md`, replace `https://YOUR_FORM_URL` with your form’s URL in the Typeform embed block.
+   - Commit and push:
+     ```bash
+     git add index.md
+     git commit -m "Embed my Typeform form"
+     git push origin main
+     ```
+
+7. **Set Up GitHub Pages**
+   - In your repository, navigate to **Settings → Pages**.
+   - Under “Source,” select the `main` branch and `/ (root)` folder.
+   - Click “Save.” After a few minutes, your site will be live at `https://<your-username>.github.io`.
+
+8. **Mailchimp Integration**
+   - Create a Mailchimp account and set up a new Audience named `SaaS Bundle Leads`.
+   - In Audience settings, ensure merge tags are configured: `*|FNAME|*` for first name and `*|REFERRER_CODE|*` for the hidden ref code field.
+   - Under **Automations**, create a 5-email drip that triggers when someone subscribes:
+     1. **Email #1 (Immediate)**: Send the Growth Stack Checklist PDF link.
+     2. **Email #2 (Day +2)**: Tutorial for Mailchimp or first tool.
+     3. **Email #3 (Day +4)**: Tutorial for second tool.
+     4. **Email #4 (Day +6)**: Case study + remaining tools.
+     5. **Email #5 (Day +8)**: Final bonus reminder.
+   - Copy each email’s HTML/text into the automation steps.
+
+9. **Zapier / Make Automations**
+   - **Bitly Link Shortening**: Create a Zap that triggers on a new row in the `AffiliateLinks` Google Sheet, then calls Bitly to shorten the `RawAffiliateURL` and writes back to `ShortURL`.
+   - **Referral Bonus**: Create a Zap that triggers when a new subscriber in Mailchimp has a nonempty `REFERRER_CODE`, then appends a row to a `ReferralsLog` Google Sheet. When any `REFERRER_CODE` reaches 3 rows, send the bonus email and mark `BonusSent = TRUE`.
+   - **Mailchimp Click Tracking**: Create a Zap that triggers on “New Email Open” or “New Link Click” in Mailchimp and appends details to a `ClickLog` Google Sheet.
+
+10. **Analytics & Monitoring**
+
+    - **Google Analytics 4**: In GA4, create a Web Data Stream for `https://<your-username>.github.io`. Copy the Measurement ID (e.g., `G-XXXXXXXX`) and paste into `default.html` as described below.
+    - **Hotjar**: Sign up for Hotjar, create a new site with your GitHub Pages URL, and copy the tracking code. Replace `YOUR_HOTJAR_ID` in `default.html`.
+    - **OneSignal**: Sign up for OneSignal, create a Web Push app, and configure the allowed origins to `https://<your-username>.github.io`. Replace `YOUR_ONESIGNAL_APP_ID` in `default.html`.
+
+## File Details
+
+
+### \_config.yml
+
+```yaml
+title: "SaaS Bundle Hub"
+description: "Curated SaaS tools for growth hackers."
+baseurl: ""
+url: "https://QuintTS.github.io"
+theme: minima
+plugins:
+  - jekyll-feed
+
+environment: production
+```
+
+### \_layouts/default.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title }} | SaaS Bundle Hub</title>
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- Hotjar Tracking Code -->
+    <script>
+      (function(h, o, t, j, a, r) {
+        h.hj = h.hj || function() {(h.hj.q = h.hj.q || []).push(arguments)};
+        h._hjSettings = { hjid: YOUR_HOTJAR_ID, hjsv: 6 };
+        a = o.getElementsByTagName('head')[0];
+        r = o.createElement('script');r.async = 1;
+        r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+        a.appendChild(r);
+      })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
+    </script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+    <script>
+      window.OneSignal = window.OneSignal || [];
+      OneSignal.push(function() {
+        OneSignal.init({ appId: "YOUR_ONESIGNAL_APP_ID" });
+      });
+    </script>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">Home</a> | <a href="/blog/">Blog</a>
+      </nav>
+    </header>
+
+    <main>
+      {{ content }}
+    </main>
+
+    <footer>
+      <p>&copy; 2025 SaaS Bundle Hub</p>
+    </footer>
+  </body>
+</html>
+```
+
+### index.md
+
+```markdown
+---
+layout: default
+title: "Ultimate Growth Hacker’s SaaS Bundle"
+---
+
+# Welcome to SaaS Bundle Hub
+
+## Curated Tools to Skyrocket Your Growth (All Free-Tier / No-Code)
+
+- **Mailchimp** (Email Marketing)
+- **HubSpot CRM** (Lead Management)
+- **Sendinblue** (Transactional Emails & SMS)
+- **Buffer** (Social Scheduling)
+- **Canva** (Design Templates)
+- **Google Analytics 4** (Web Analytics)
+- **Hotjar** (Behavior Heatmaps)
+- **Trello** (Project Management)
+- **Ubersuggest** (SEO Research)
+- **Bitly** (Link Shortening)
+- **Zapier** (Workflow Automation)
+- **Carrd** (Landing Pages)
+- **Typeform** (Forms & Surveys)
+- **OneSignal** (Push Notifications)
+- **Monday.com** (Team Collaboration)
+
+
+Click below to get the **Free Growth Stack Checklist** and exclusive deals!
+
+<!-- Typeform Embed -->
+<div class="typeform-widget" data-url="https://YOUR_FORM_URL" style="width: 100%; height: 500px;"></div>
+<script> (function() { var qs, js, q, s, d = document, gi = d.getElementById, ce = d.createElement, gt = d.getElementsByTagName, id = "typef_orm", b = "https://embed.typeform.com/"; if (!gi.call(d, id)) { js = ce.call(d, "script"); js.id = id; js.src = b + "embed.js"; q = gt.call(d, "script")[0]; q.parentNode.insertBefore(js, q) } })() </script>
+
+## Why This Bundle?
+
+- **Zero Cost to Start**: All tools have free plans.
+- **No Coding Required**: Leverage no-code/low-code platforms.
+- **Automated Workflows**: Save time, focus on growth.
+
+
+## How It Works
+
+1. Sign up with your email above. You get an instant PDF: “Ultimate Growth Stack Checklist.”
+2. You receive a 5-email dripped tutorial on each tool, with affiliate deals.
+3. Use the tools to build your startup’s growth machine.
+4. Earn referral bonuses by sharing your unique code.
+
+
+## Blog & Resources
+
+Looking for in-depth guides? Visit our [Blog](/blog/).
+
+
+<footer>
+<p>© 2025 SaaS Bundle Hub</p>
+</footer>
+```
+
+### assets/css/style.css
+
+```css
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+header {
+  background: #333;
+  color: #fff;
+  padding: 1rem;
+}
+header nav a {
+  color: #fff;
+  margin-right: 1rem;
+  text-decoration: none;
+}
+main {
+  padding: 2rem;
+}
+footer {
+  background: #f4f4f4;
+  text-align: center;
+  padding: 1rem;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+}
+```
+
+### \_posts/2025-06-02-sample-post.md
+
+```markdown
+---
+layout: default
+title: "Sample Blog Post: Best Free No-Code Landing Page Tools [2025]"
+excerpt: "Discover the top free no-code landing page builders to scale your email list in 2025."
+---
+
+# Best Free No-Code Landing Page Tools [2025]
+
+In this guide, we'll explore the top free no-code landing page builders that growth hackers and startups love, including **Carrd**, **Tilda**, and **Webflow** (free tier). By the end, you'll know exactly which tool to choose for your next campaign.
+
+## Why No-Code Landing Pages?
+
+- **Speed**: Launch in minutes, not days.
+- **Cost-Effective**: Free plans let you test ideas.
+- **Customizable**: Pre-built templates & drag-and-drop.
+
+## Top Tools
+
+### 1. Carrd
+
+- **Pros**: Ultra-simple, free custom domains on paid plans, lots of templates.
+- **Cons**: Limited form integrations on free tier.
+-
+[Visit Carrd](https://carrd.co?ref=YOUR_AFFILIATE_LINK)
+
+### 2. Tilda
+
+- **Pros**: Block-based design, free 50 pages, built-in analytics.
+- **Cons**: Slightly steeper learning curve.
+-
+[Visit Tilda](https://tilda.cc?ref=YOUR_AFFILIATE_LINK)
+
+### 3. Webflow (Free)
+
+- **Pros**: Full CSS control, production-ready code export.
+- **Cons**: Branding in free tier, steeper learning curve.
+-
+[Visit Webflow](https://webflow.com?ref=YOUR_AFFILIATE_LINK)
+
+## How to Choose
+
+1. **Simplicity vs Control**: If you need simple and fast, use Carrd. For more design control, use Webflow.
+2. **Integrations**: Check if your email provider (Mailchimp, Sendinblue) is supported by the tool.
+
+## Call to Action
+
+Ready to build? Get the **Ultimate Growth Stack Checklist** [here](/) and start implementing today!
+
+*— Posted on June 2, 2025 by SaaS Bundle Hub*  
+*Categories: No-Code, Growth Hacking, Landing Pages*
+```
+
+### keywords.txt
+
+```txt
+best free email automation for startups 2025
+best free CRM for small business 2025
+affordable social scheduler 2025
+free SEO research tools 2025
+top project management tools 2025
+best no-code landing page builders 2025
+how to set up Google Analytics 4 for free
+using Hotjar for user insights 2025
+free design tools for startups 2025
+how to automate workflows with Zapier 2025
+```
+
+### social\_prompts.txt
+
+```txt
+Write a 280-character tweet about using free no-code landing page builders to grow email lists in 2025.
+Generate a LinkedIn post (max 1,300 characters) on why every bootstrapper needs an automated SaaS growth stack.
+Write a tweet: "5 free tools every startup needs to launch faster! #NoCode #SaaS".
+Create a LinkedIn carousel concept: "Top 3 free email marketing tools & how to use them".
+Generate a tweet about automating your social scheduling with Buffer free tier.
+Write a LinkedIn post on using Ubersuggest to find low-competition keywords.
+Tweet: "Ever wondered how to track user behavior without code? Use Hotjar’s free plan! 📊 #GrowthHacking".
+LinkedIn: "How to set up Google Analytics 4 in under 10 minutes".
+Tweet: "Design like a pro for free—5 Canva tips for non-designers. #Startups".
+LinkedIn: "The ultimate free CRM showdown: HubSpot vs. alternatives".
+Create a tweet about Trello hacks for managing remote teams.
+LinkedIn: "Why you need Bitly in your marketing stack (even if you’re on a budget)".
+Tweet: "Zapier free tier: automate 100 tasks/month without spending a dime!".
+LinkedIn: "Carrd vs. WordPress: Which is best for quick landing pages?".
+Tweet: "Collect emails like a pro—Typeform’s free plan is all you need #EmailMarketing".
+LinkedIn: "Increase engagement with OneSignal push notifications—free tier guide".
+Tweet: "Monday.com free plan: manage up to 2 boards with your team! #Productivity".
+LinkedIn: "Sendinblue vs. Mailchimp: Choosing the right free email tool".
+Tweet: "Hotjar heatmaps: See what users really want on your site. #UserExperience".
+LinkedIn: "How to use Bitly data to inform your content strategy".
+Tweet: "Buffer’s new scheduler features for 2025—check them out!".
+LinkedIn: "Case Study: A startup grew to 10k MRR using free SaaS tools".
